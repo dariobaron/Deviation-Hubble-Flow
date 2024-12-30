@@ -1,0 +1,5 @@
+Tasks:
+
+- preprocess the data to construct a continuous probability distribution using the parzen windows kernel density estimation (C++ object in which you provide a kernel function and a set of data points)
+
+- define the loss function between the model function (mixture of )
