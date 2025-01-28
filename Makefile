@@ -1,6 +1,6 @@
 # to edit:
-ARMAINCPATH = /home/dario/repos/armadillo/include/
-ENSMALLENCPATH = /home/dario/repos/ensmallen/include/
+ARMAINCPATH = extern/armadillo/include/
+ENSMALLENCPATH = extern/ensmallen/include/
 CXX = g++
 
 # do not edit:
@@ -31,11 +31,18 @@ $(MODULENAMES): % : project/%$(MODULEEXTENSION)
 project/%$(MODULEEXTENSION): src/%.cpp $(HEADERS)
 	$(CXX) -o $@ $< $(COMPILATIONFLAGS) $(WARNINGS) $(LINKINGLIBS) $(INCLUDEPATH)
 
-setup: createvenv
+setup: createvenv installlibs initrepo
+
+installlibs: createvenv
 	. env/bin/activate && python -m pip install -r requirements.txt
 
 createvenv:
 	if [ ! -d env ]; then python -m venv env; fi
+
+initrepo:
+	git config filter.strip-notebook-output.clean 'jupyter nbconvert --ClearOutputPreprocessor.enabled=True --to=notebook --stdin --stdout --log-level=ERROR'; \\
+	git config filter.strip-notebook-output.smudge 'cat'; \\
+	git config filter.strip-notebook-output.required true
 
 clean:
 	rm -f main.x project/*$(MODULEEXTENSION)

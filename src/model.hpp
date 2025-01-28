@@ -5,7 +5,7 @@
 #include "mixturedensity.hpp"
 #include "kernels.hpp"
 #include "typedefs.hpp"
-#include "hyperparameters.hpp"
+#include "../hyperparameters.hpp"
 #include "parameterstransform.hpp"
 
 
@@ -39,6 +39,7 @@ public:
 			}
 		}
 		W_ = p;
+		std::cout << "W_ = " << W_ << std::endl;
 	}
 
 	auto getDensity(double rproj, double vlos) {
@@ -46,6 +47,7 @@ public:
 		////////////////////
 		arma::colvec phis = arma::mat(tm_(rproj, vlos));
 		arma::colvec tmp = W_ * phis;
+		std::cout << "tmp = " << tmp << std::endl;
 		std::vector<double> thetas(tmp.begin(), tmp.end());
 		/*///////////////////
 		py::print("phis = ", py::arg("end")=":");
@@ -53,14 +55,14 @@ public:
 			py::print(phi, py::arg("end")=",");
 		}
 		py::print(py::arg("flush")=true);
-		py::print("thetas = ", py::arg("end")=":");
-		for (auto & t : thetas){
-			py::print(t, py::arg("end")=",");
-		}
-		py::print(py::arg("flush")=true);
 		*///////////////////
+		std::cout << "thetas = ";
+		for (auto & t : thetas){
+			std::cout << t << ",";
+		}
+		std::cout << std::endl;
 		double * ptr = thetas.data();
-		pt_(ptr);
+//		pt_(ptr);
 		/*//////////////////
 		py::print("thetrans = ", py::arg("end")=":");
 		for (auto & t : thetas){

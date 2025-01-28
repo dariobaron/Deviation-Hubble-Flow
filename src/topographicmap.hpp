@@ -11,13 +11,13 @@ private:
 //	double inf_x_, sup_x_, inf_y_, sup_y_;
 public:
 	TopographicMap(double inf_x, double sup_x, double inf_y, double sup_y, unsigned N_x, unsigned N_y) /*: inf_x_(inf_x), sup_x_(sup_x), inf_y_(inf_y), sup_y_(sup_y)*/ {
-		double step_x = (sup_x - inf_x) / (N_x + 1);
-		double step_y = (sup_y - inf_y) / (N_y + 1);
+		double step_x = (sup_x - inf_x) / N_x;
+		double step_y = (sup_y - inf_y) / N_y;
 		double offset_x = inf_x + step_x / 2;
 		double offset_y = inf_y + step_y / 2;
 		for (unsigned i = 0; i < N_x; ++i){
 			for (unsigned j = 0; j < N_y; ++j){
-				funcs_.emplace_back(offset_x + i * step_x, offset_y + j * step_y, step_x, step_y, 0);
+				funcs_.emplace_back(offset_x + i * step_x, offset_y + j * step_y, step_x/2, step_y/2, 0);
 			}
 		}
 	};
