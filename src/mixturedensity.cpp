@@ -15,10 +15,6 @@ PYBIND11_MODULE(mixturedensity, m){
 
 		.def("nParams", &MixtureDensity<KernelTypeMixture>::nParams)
 
-		.def("addGaussian", [](MixtureDensity<KernelTypeMixture> & self, double mu, double sigma, double weight){
-			self.addFunction(Gaussian(mu, sigma), weight);
-		}, py::arg("mu"), py::arg("sigma"), py::arg("weight"))
-
 		.def("setParams", [](MixtureDensity<KernelTypeMixture> & self, const np_array<double> & params){
 			if (params.shape(0) != self.nParams() + self.nComponents()){
 				throw std::runtime_error("The number of parameters must be " + std::to_string(self.nParams()) );
@@ -28,11 +24,25 @@ PYBIND11_MODULE(mixturedensity, m){
 					throw std::runtime_error("The weights must be positive");
 				}
 			}
-			self.setParameters(params.data(), params.data()+self.nComponents());
+			self.setWeights(params.data());
+			self.renormalizeWeights();
+			self.setParameters(params.data()+self.nComponents());
 		}, py::arg("params"))
 
-		.def("renormalizeWeights", &MixtureDensity<KernelTypeMixture>::renormalizeWeights)
-		
+		.def("getParams", [](const MixtureDensity<KernelTypeMixture> & self){
+			np_array<double> params(self.nComponents()+self.nParams());
+			unsigned i = 0;
+			for (auto & w : self.getWeights()){
+				params.mutable_at(i) = w;
+				++i;
+			}
+			for (auto & p : self.getParameters()){
+				params.mutable_at(i) = p;
+				++i;
+			}
+			return params;
+		})
+
 		.def("__call__", py::vectorize(&MixtureDensity<KernelTypeMixture>::operator()), py::arg("x"))
 		
 		.def("evalWithParams", [](const MixtureDensity<KernelTypeMixture> & self, double x, const np_array<double> & params){
@@ -46,5 +56,6 @@ PYBIND11_MODULE(mixturedensity, m){
 			}
 			return self.evalWithParams(x, params.data(), params.data()+self.nComponents());
 		}, py::arg("x"), py::arg("params"))
+
 	;
 }

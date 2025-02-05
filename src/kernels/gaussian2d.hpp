@@ -3,19 +3,22 @@
 #include <cmath>
 #include <numbers>
 #include <stdexcept>
+#include <vector>
 
 
 class Gaussian2D{
+	
 private:
 	double mu_x_, mu_y_;
 	double sigma_x_, sigma_y_;
 	double rho_;
 	double Zinv_;
+
 public:
 	struct ParamsType{	double mu_x, mu_y, sigma_x, sigma_y, rho;	};
 	static constexpr unsigned n_params = 5;
 	
-	Gaussian2D(double mu_x=0, double mu_y=0, double sigma_x=1, double sigma_y=1, double rho=0) : mu_x_(mu_x), mu_y_(mu_y), sigma_x_(sigma_x), sigma_y_(sigma_y), rho_(rho), Zinv_(1./2/std::numbers::pi/sigma_x/sigma_y/std::sqrt(1-rho*rho)) {
+	Gaussian2D(double mu_x=0, double mu_y=0, double sigma_x=1, double sigma_y=1, double rho=0) : mu_x_(mu_x), mu_y_(mu_y), sigma_x_(sigma_x), sigma_y_(sigma_y), rho_(rho), Zinv_(computeZinv(sigma_x,sigma_y,rho)) {
 		checkSigmaPositive();
 		checkRhoValid();
 	};
@@ -32,7 +35,7 @@ public:
 		rho_ = rho;
 		checkSigmaPositive();
 		checkRhoValid();
-		Zinv_ = 1./2/std::numbers::pi/sigma_x_/sigma_y_/std::sqrt(1-rho_*rho_);
+		Zinv_ = computeZinv(sigma_x_, sigma_y_, rho_);
 	}
 
 	void setParams(const double * ptr_params){
@@ -43,6 +46,13 @@ public:
 		this->setParams(params.mu_x, params.mu_y, params.sigma_x, params.sigma_y, params.rho);
 	}
 
+	ParamsType getParams() const{
+		return {mu_x_, mu_y_, sigma_x_, sigma_y_, rho_};
+	}
+	std::vector<double> getVecParams() const{
+		return {mu_x_, mu_y_, sigma_x_, sigma_y_, rho_};
+	}
+
 	double operator()(double x, double y) const {
 		return Zinv_ * std::exp(-0.5 / (1 - rho_*rho_) * (std::pow((x-mu_x_)/sigma_x_, 2) + std::pow((y-mu_y_)/sigma_y_, 2) + 2*rho_*(x-mu_x_)*(y-mu_y_)/sigma_x_/sigma_y_));
 	}
@@ -50,7 +60,8 @@ public:
 	double operator()(double x, double y, double mu_x, double mu_y, double sigma_x, double sigma_y, double rho) const {
 		checkSigmaPositive(sigma_x, sigma_y);
 		checkRhoValid(rho);
-		return 1./2/std::numbers::pi/sigma_x/sigma_y/std::sqrt(1-rho*rho) * std::exp(-0.5 / (1 - rho*rho) * (std::pow((x-mu_x)/sigma_x, 2) + std::pow((y-mu_y)/sigma_y, 2) + 2*rho*(x-mu_x)*(y-mu_y)/sigma_x/sigma_y));
+		double Zinv = computeZinv(sigma_x, sigma_y, rho);
+		return Zinv * std::exp(-0.5 / (1 - rho*rho) * (std::pow((x-mu_x)/sigma_x, 2) + std::pow((y-mu_y)/sigma_y, 2) + 2*rho*(x-mu_x)*(y-mu_y)/sigma_x/sigma_y));
 	}
 
 	double operator()(double x, double y, const double * ptr_params) const {
@@ -62,6 +73,10 @@ public:
 	}
 
 private:
+	double computeZinv(double sigma_x, double sigma_y, double rho) const{
+		return 1. / 2 / std::numbers::pi / sigma_x / sigma_y / std::sqrt(1-rho*rho);
+	}
+
 	void checkSigmaPositive() const{
 		if (sigma_x_ <= 0 || sigma_y_ <= 0){
 			throw std::runtime_error("The standard deviations must be positive");

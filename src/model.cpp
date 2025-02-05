@@ -8,13 +8,22 @@ PYBIND11_MODULE(model, m) {
 	py::module_::import("project.topographicmap");
 
 	py::class_<Model>(m, "Model")
-		.def(py::init<double, double, double, double, unsigned, unsigned>(), py::arg("inf_x"), py::arg("sup_x"), py::arg("inf_y"), py::arg("sup_y"), py::arg("N_x"), py::arg("N_y"))
-		.def("addGaussian", [](Model & m, double mu, double sigma, double weight){
-				m.addFunction(Gaussian(mu, sigma), weight);
-			}, py::arg("mu"), py::arg("sigma"), py::arg("weight")
-		)
+
+		.def(py::init<TopographicMap>(), py::arg("topographic_map"))
+	
 		.def("initParameters", &Model::initParameters)
+	
 		.def("setParameters", py::overload_cast<const np_array<double>&>(&Model::setParameters))
-		.def("getDensity", &Model::getDensity)
+	
+		.def("evalOnInput", &Model::evalOnInput)
+	
+		.def("evalOnThetas", [](Model & self, const np_array<double> & thetas){
+			std::vector<double> thetas_v(thetas.shape(0));
+			for (unsigned i = 0; i < thetas.shape(0); ++i){
+				thetas_v[i] = thetas.at(i);
+			}
+			return self.evalOnThetas(thetas_v);
+		}, py::arg("thetas"))
+	
 	;
 }
