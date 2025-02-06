@@ -57,13 +57,23 @@ public:
 };
 
 
+template<>
+class Transformer<GaussianFixedMean>{
+public:
+	Transformer() = default;
+	double* operator()(double * ptr) const{
+		ptr[0] *= ptr[0];
+		return &ptr[1];
+	}
+};
+
+
 template<typename TupleType>
 class ParametersTransform{
 private:
 	WeightTransform wt_;
 public:
 	ParametersTransform() : wt_(std::tuple_size<TupleType>::value) {};
-
 	void operator()(double * ptr) const{
 		ptr = wt_(ptr);
 		std::apply(
@@ -71,5 +81,22 @@ public:
 				((ptr = Transformer<decltype(f)>()(ptr)), ...);
 			}, TupleType()
 		);
+	}
+};
+
+
+template<typename KernelType>
+class HomoParametersTransform{
+private:
+	WeightTransform wt_;
+	Transformer<KernelType> tr_;
+	unsigned n_components_;
+public:
+	HomoParametersTransform(unsigned n_components) : wt_(n_components), n_components_(n_components) {};
+	void operator()(double * ptr) const{
+		ptr = wt_(ptr);
+		for (unsigned i = 0; i < n_components_; ++i){
+			ptr = tr_(ptr);
+		}
 	}
 };

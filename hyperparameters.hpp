@@ -9,3 +9,5 @@ using KernelTypeKDE = Gaussian;
 //constexpr unsigned NComponentsMixture = 3;
 
 using KernelTypeMixture = std::tuple<Rayleigh, Gaussian, Gaussian>;
+
+using KernelTypeHomoMixture = GaussianFixedMean;

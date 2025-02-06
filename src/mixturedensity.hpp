@@ -92,3 +92,82 @@ public:
 	}
 
 };
+
+
+template<typename KernelType>
+class HomogeneousMixtureDensity{
+private:
+	std::vector<KernelType> funcs_;
+	std::vector<double> weights_;
+public:
+	HomogeneousMixtureDensity() {};
+
+	unsigned nComponents() const{
+		return weights_.size();
+	}
+
+	unsigned nParams() const{
+		unsigned n = 0;
+		for (auto & f : funcs_){
+			n += f.n_params;
+		}
+		return n;
+	}
+
+	template<typename ...Args>
+	void addFunction(double w, Args && ...args){
+		funcs_.emplace_back(std::forward<Args>(args)...);
+		weights_.push_back(w);
+	}
+
+	void renormalizeWeights(){
+		double sum = std::accumulate(weights_.begin(), weights_.end(), 0.);
+		for (auto & w : weights_){
+			w /= sum;
+		}
+	}
+
+	void setWeights(const double * ptr_w){
+		for (unsigned i = 0; i < nComponents(); ++i){
+			weights_[i] = ptr_w[i];
+		}
+	}
+
+	void setParameters(const double * ptr_par){
+		for (auto & f : funcs_){
+			f.setParams(ptr_par);
+			ptr_par += f.n_params;
+		}
+	}
+
+	std::vector<double> getWeights() const{
+		return std::vector<double>(weights_.begin(), weights_.end());
+	}
+
+	std::vector<double> getParameters() const{
+		std::vector<double> params;
+		for (auto & f : funcs_){
+			auto p = f.getVecParams();
+			params.insert(params.end(), p.begin(), p.end());
+		}
+		return params;
+	}
+	
+	double operator()(double x) const{
+		std::vector<double> evaluations(nComponents());
+		for (unsigned i = 0; i < nComponents(); ++i){
+			evaluations[i] = funcs_[i](x);
+		}
+		return std::inner_product(weights_.begin(), weights_.end(), evaluations.begin(), 0.);
+	};
+
+	double evalWithParams(double x, const double * ptr_w, const double * ptr_par) const{
+		double result = 0;
+		for (unsigned i = 0; i < nComponents(); ++i){
+			result += ptr_w[i] * funcs_[i](x, ptr_par);
+			ptr_par += funcs_[i].n_params;
+		}
+		return result;
+	}
+
+};
