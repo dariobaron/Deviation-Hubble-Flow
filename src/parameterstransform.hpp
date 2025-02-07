@@ -57,6 +57,17 @@ public:
 };
 
 
+template<>
+class Transformer<MaxwellBoltzmann>{
+public:
+	Transformer() = default;
+	double* operator()(double * ptr) const{
+		ptr[0] = std::exp(ptr[0]);
+		return &ptr[1];
+	}
+};
+
+
 template<typename TupleType>
 class ParametersTransform{
 private:
