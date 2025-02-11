@@ -66,5 +66,6 @@ public:
 };
 
 
+using TruncGaussian = Chi<1>;
 using Rayleigh = Chi<2>;
 using MaxwellBoltzmann = Chi<3>;
