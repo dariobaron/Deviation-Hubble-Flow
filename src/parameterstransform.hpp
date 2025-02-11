@@ -47,6 +47,17 @@ public:
 
 
 template<>
+class Transformer<TruncGaussian>{
+public:
+	Transformer() = default;
+	double* operator()(double * ptr) const{
+		ptr[0] = std::exp(ptr[0]);
+		return &ptr[1];
+	}
+};
+
+
+template<>
 class Transformer<Rayleigh>{
 public:
 	Transformer() = default;
