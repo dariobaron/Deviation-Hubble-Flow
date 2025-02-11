@@ -5,7 +5,7 @@ CXX = g++
 
 # do not edit:
 SOURCES := $(wildcard src/*.cpp)
-HEADERS := $(wildcard src/*.hpp)
+HEADERS := $(wildcard src/*.hpp) $(wildcard *.hpp)
 MODULEEXTENSION := $(shell python-config --extension-suffix)
 COMPILEDMODULES := $(patsubst src/%.cpp,project/%$(MODULEEXTENSION),$(SOURCES))
 MODULENAMES := $(patsubst src/%.cpp,%,$(SOURCES))

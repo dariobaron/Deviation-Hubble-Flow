@@ -1,68 +1,94 @@
 #pragma once
 
+#include <array>
 #include <vector>
 #include <stdexcept>
-#include <variant>
+#include <tuple>
 #include <numeric>
+#include <utility>
 
 
-template<typename VariantType>
+template<typename TupleType>
 class MixtureDensity{
 private:
-	std::vector<VariantType> funcs_;
-	std::vector<double> weights_;
+	TupleType funcs_;
+	std::array<double,std::tuple_size<TupleType>::value> weights_;
 public:
 	MixtureDensity() {};
 
-	unsigned nComponents() const{
-		return funcs_.size();
+	constexpr unsigned nComponents() const{
+		return weights_.size();
 	}
 
-	unsigned nParams() const{
+	constexpr unsigned nParams() const{
 		unsigned n = 0;
-		for (unsigned i = 0; i < funcs_.size(); ++i){
-			n += std::visit([](auto && f){ return f.n_params; }, funcs_[i]);
-		}
+		std::apply([&n](auto && ...f){ ((n += f.n_params), ...); }, funcs_);
 		return n;
-	}
-	
-	template<typename FuncType>
-	void addFunction(FuncType func, double weight){
-		funcs_.push_back(VariantType(func));
-		weights_.push_back(weight);
 	}
 
 	void renormalizeWeights(){
 		double sum = std::accumulate(weights_.begin(), weights_.end(), 0.);
-		for (unsigned i = 0; i < weights_.size(); ++i){
-			weights_[i] /= sum;
+		for (auto & w : weights_){
+			w /= sum;
 		}
 	}
 
-	void setParameters(const double * ptr_w, const double * ptr_par){
-		for (unsigned i = 0; i < funcs_.size(); ++i){
-			std::visit([ptr_par](auto && f){ f.setParams(ptr_par); }, funcs_[i]);
-			weights_[i] = *ptr_w;
-			++ptr_w;
-			ptr_par += std::visit([](auto && f){ return f.n_params; }, funcs_[i]);
+	void setWeights(const double * ptr_w){
+		for (unsigned i = 0; i < nComponents(); ++i){
+			weights_[i] = ptr_w[i];
 		}
+	}
+
+	void setParameters(const double * ptr_par){
+		std::apply(
+			[&ptr_par](auto && ...f){
+				((f.setParams(ptr_par), ptr_par += f.n_params), ...);
+			}, funcs_
+		);
+	}
+
+	std::vector<double> getWeights() const{
+		return std::vector<double>(weights_.begin(), weights_.end());
+	}
+
+	std::vector<double> getParameters() const{
+		std::vector<double> params;
+		params.reserve(nParams());
+		std::vector<std::vector<double>> paramVecs;
+		paramVecs.reserve(nComponents());
+		std::apply(
+			[&paramVecs](auto && ...f){
+				((paramVecs.push_back(f.getVecParams())), ...);
+			}, funcs_
+		);
+		for (auto & vec : paramVecs){
+			for (auto & p : vec){
+				params.push_back(p);
+			}
+		}
+		return params;
 	}
 	
 	double operator()(double x) const{
-		double result = 0;
-		for (unsigned i = 0; i < funcs_.size(); ++i){
-			result += weights_[i] * std::visit([](auto && f){ return f; }, funcs_[i])(x);
-		}
-		return result;
+		std::vector<double> evaluations(nComponents());
+		unsigned i = 0;
+		std::apply(
+			[&evaluations, x, &i](auto && ...f){
+				((evaluations[i] = f(x), ++i), ...);
+			}, funcs_
+		);
+		return std::inner_product(weights_.begin(), weights_.end(), evaluations.begin(), 0.);
 	};
 
 	double evalWithParams(double x, const double * ptr_w, const double * ptr_par) const{
 		double result = 0;
-		for (auto & func : funcs_){
-			result += (*ptr_w) * std::visit([ptr_par](auto && f){ return decltype(f)(ptr_par); }, func)(x);
-			++ptr_w;
-			ptr_par += std::visit([](auto && f){ return f.n_params; }, func);
-		}
+		unsigned i = 0;
+		std::make_index_sequence<std::tuple_size<TupleType>::value> indices;
+		auto compute = [&result, &i, x, ptr_w, ptr_par, this]<size_t ...I>(std::index_sequence<I...>){
+			((result += ptr_w[I] * std::get<I>(funcs_)(x, ptr_par+i), i += std::tuple_element<I,TupleType>::type::n_params), ...);
+		};
+		compute(indices);
 		return result;
 	}
+
 };

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include "armadillo"
 #include "dataholder.hpp"
 #include "model.hpp"
@@ -28,7 +29,7 @@ public:
 			/*//////////////////////
 			py::print("rproj = ", data.rproj, "\tvproj = ", data.vlos, py::arg("end")="\t");
 			*///////////////////////
-			auto P = model_->getDensity(data.rproj, data.vlos);
+			auto P = model_->evalOnInput(data.rproj, data.vlos);
 			/*//////////////////////
 			py::print("P(r3d) = ", P(data.r3d), py::arg("flush")=true);
 			*///////////////////////
