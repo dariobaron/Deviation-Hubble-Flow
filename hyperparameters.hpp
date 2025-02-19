@@ -8,4 +8,4 @@ using KernelTypeKDE = Gaussian;
 //using KernelTypeMixture = std::variant<Gaussian>;
 //constexpr unsigned NComponentsMixture = 3;
 
-using KernelTypeMixture = std::tuple<MaxwellBoltzmann, Gaussian, Gaussian>;
+using KernelTypeMixture = std::tuple<Gaussian>;

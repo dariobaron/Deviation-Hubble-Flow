@@ -33,7 +33,6 @@ public:
 			}
 		}
 		W_ = p;
-		std::cout << "W_ = " << W_ << std::endl;
 	}
 
 	auto evalOnThetas(std::vector<double> thetas) {
