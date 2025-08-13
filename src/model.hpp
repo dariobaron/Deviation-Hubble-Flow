@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+#include <limits>
 #include <armadillo>
 #include "topographicmap.hpp"
 #include "mixturedensity.hpp"
@@ -36,6 +38,9 @@ public:
 	}
 
 	auto evalOnThetas(std::vector<double> thetas) {
+		// for truncated gaussian, thetas = [mu, sigma, a, b]
+		thetas.push_back(0);
+		thetas.push_back(std::numeric_limits<double>::infinity());
 		double * ptr = thetas.data();
 		pt_(ptr);
 		md_.setWeights(ptr);
